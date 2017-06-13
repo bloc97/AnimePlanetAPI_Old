@@ -12,9 +12,12 @@ import java.util.List;
  * @author bowen
  */
 public class AnimePreview {
-    private final String title, altTitle, type, episodes, minutesPerEpisode, studio, beginYear, endYear, rating, description, source, thumb;
+    private final int id;
+    private final String url, title, altTitle, type, episodes, minutesPerEpisode, studio, beginYear, endYear, rating, description, source, thumb;
     private final List<String> tags;
-    public AnimePreview(String title, String altTitle, String type, String episodes, String minutesPerEpisode, String studio, String beginYear, String endYear, String rating, String description, String source, List<String> tags, String thumbnailUrl) {
+    public AnimePreview(int id, String url, String title, String altTitle, String type, String episodes, String minutesPerEpisode, String studio, String beginYear, String endYear, String rating, String description, String source, List<String> tags, String thumbnailUrl) {
+        this.id = id;
+        this.url = url;
         this.title = title;
         this.altTitle = altTitle;
         this.type = type;
@@ -32,6 +35,13 @@ public class AnimePreview {
         }
         this.tags = tags;
         this.thumb = thumbnailUrl;
+    }
+
+    public int getId() {
+        return id;
+    }
+    public String getUrl() {
+        return url;
     }
     public String getTitle() {
         return title;
@@ -118,10 +128,10 @@ public class AnimePreview {
         return thumb;
     }
     
-    
     @Override
     public String toString() {
-        return getTitle() + " (" + getAltTitle() + ")\n" +
+        return getId() + " " + getTitle() + " (" + getAltTitle() + ")\n" +
+               getUrl() + "\n" +
                getType() + ", " + getEpisodes() + " e" + ", " + getMinutesPerEpisode() + " min/e" + ", " + getStudio() + ", " + (hasMultipleYears() ? getBeginYear() + " - " + getEndYear() : getBeginYear()) + ", " + getRating() + "/5" + "\n" +
                getDescription() + " (" + getDescriptionSource() + ")\n" +
                getTags() + "\n" +

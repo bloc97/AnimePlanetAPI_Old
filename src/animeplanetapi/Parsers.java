@@ -74,4 +74,9 @@ public abstract class Parsers {
         
         return map;
     }
+    
+    public static String formatIllegalSpace(String string) {
+        return string.replace(" ", "%20");
+    }
+    
 }

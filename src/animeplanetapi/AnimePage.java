@@ -11,11 +11,89 @@ import java.util.List;
  *
  * @author bowen
  */
-class AnimePage extends AnimePreview {
-    
-    public AnimePage(String title, String altTitle, String type, String episodes, String minutesPerEpisode, String studio, String beginYear, String endYear, String rating, String description, String source, List<String> tags, String thumbnailUrl) {
-        super(title, altTitle, type, episodes, minutesPerEpisode, studio, beginYear, endYear, rating, description, source, tags, thumbnailUrl);
+public class AnimePage extends AnimePreview {
+    public final String studioUrl, beginYearUrl, endYearUrl, season, seasonUrl, ratingCount, rank;
+    public final AnimeUserStats userStats;
+    public AnimePage(int id, String url, String title, String altTitle, String type, String episodes, String minutesPerEpisode, String studio, String studioUrl,
+            String beginYear, String endYear, String beginYearUrl, String endYearUrl, String season, String seasonUrl, 
+            String rating, String ratingCount, String rank, AnimeUserStats userStats, String description, String source, List<String> tags, String thumbnailUrl) {
+        super(id, url, title, altTitle, type, episodes, minutesPerEpisode, studio, beginYear, endYear, rating, description, source, tags, thumbnailUrl);
+        
+        this.studioUrl = studioUrl;
+        this.beginYearUrl = beginYearUrl;
+        this.endYearUrl = endYearUrl;
+        this.season = season;
+        this.seasonUrl = seasonUrl;
+        this.ratingCount = ratingCount;
+        this.rank = rank;
+        this.userStats = userStats;
     }
     
+    public boolean hasStudioUrl() {
+        return !getStudioUrl().equals("N/A");
+    }
+    public String getStudioUrl() {
+        return studioUrl;
+    }
+    public boolean hasBeginYearUrl() {
+        return !getBeginYearUrl().equals("N/A");
+    }
+    public String getBeginYearUrl() {
+        return beginYearUrl;
+    }
+    public boolean hasEndYearUrl() {
+        return !getEndYearUrl().equals("N/A");
+    }
+    public String getEndYearUrl() {
+        return endYearUrl;
+    }
+    public boolean hasSeason() {
+        return !getSeason().equals("N/A");
+    }
+    public String getSeason() {
+        return season;
+    }
+    public boolean hasSeasonUrl() {
+        return !getSeasonUrl().equals("N/A");
+    }
+    public String getSeasonUrl() {
+        return seasonUrl;
+    }
+    
+    public boolean hasRatingCount() {
+        return !getRatingCount().equals("N/A");
+    }
+    public String getRatingCount() {
+        return ratingCount;
+    }
+    public boolean hasRank() {
+        return !getRank().equals("N/A");
+    }
+    public String getRank() {
+        return rank;
+    }
+
+    public AnimeUserStats getUserStats() {
+        return userStats;
+    }
+    
+    
+    @Override
+    public String toString() {
+        return getId() + " " + getTitle() + " (" + getAltTitle() + ")\n" +
+               getUrl() + "\n" +
+               getType() + ", " + getEpisodes() + " e" + ", " + getMinutesPerEpisode() + " min/e" + ", " + getStudio() + ", " + (hasMultipleYears() ? getBeginYear() + " - " + getEndYear() : getBeginYear()) + ", " + getRating() + "/5" + "\n" +
+               getDescription() + " (" + getDescriptionSource() + ")\n" +
+               getTags() + "\n" +
+               getThumbnailUrl() + "\n" +
+               studioUrl + "\n" +
+               beginYearUrl + "\n" +
+               endYearUrl + "\n" +
+               season + "\n" +
+               seasonUrl + "\n" +
+               ratingCount + "\n" +
+               rank + "\n" +
+               getUserStats() + "\n";
+    }
     
 }

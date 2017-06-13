@@ -27,6 +27,7 @@ public abstract class Searchers {
     
     
     public static List<AnimePreview> searchAnimeByName(String name) {
+        name = Parsers.formatIllegalSpace(name);
         List<AnimePreview> animePreviewList = new LinkedList();
         
         try {
@@ -45,6 +46,30 @@ public abstract class Searchers {
         return animePreviewList;
     }
     
+    public static AnimePage getAnimeByName(String name) {
+        name = Parsers.formatIllegalSpace(name);
+        
+        try {
+            
+            Document mainDoc = Jsoup.connect("http://www.anime-planet.com/anime/all?name=" + name).get();
+            
+            
+            if (isDocumentFullAnimePage(mainDoc)) {
+                return fetchFullAnimeFromPage(mainDoc);
+            } else {
+                try {
+                    AnimePreview ap = fetchAnimesFromListPage(mainDoc).get(0);
+                    Document fullDoc = Jsoup.connect(ap.getUrl()).get();
+                    return fetchFullAnimeFromPage(fullDoc);
+                } catch (Exception ex) {
+                }
+            }
+            
+        } catch (IOException ex) {
+        }
+        return new AnimePage(-1, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", new AnimeUserStats(0, 0, 0, 0, 0, 0), "", "", new LinkedList(), "");
+    }
+    
     public static boolean isDocumentFullAnimePage(Document mainDoc) {
         Elements elements = mainDoc.body().getElementsByAttributeValue("itemprop", "name");
         for (Element element : elements) {
@@ -60,19 +85,18 @@ public abstract class Searchers {
         
         Element entryBar = mainDoc.body().getElementById("siteContainer").getElementsByClass("pure-g entryBar").first();
         
-        System.out.println(entryBar);
+        //System.out.println(entryBar);
         
         String type = "", episodes = "N/A", minutesPerEpisode = "N/A",
                studio = "N/A", studioUrl = "N/A",
-               beginYear = "", endYear = "",
-               rating = "N/A";
+               beginYear = "", endYear = "", beginYearUrl = "N/A", endYearUrl = "N/A", season = "N/A", seasonUrl = "N/A",
+               rating = "N/A", ratingCount = "N/A", rank = "N/A";
                 
         String typeString = entryBar.getElementsByClass("type").first().text();
         Map<String, String> typeMap = Parsers.parseType(typeString);
         type = typeMap.get("type");
         episodes = typeMap.get("episodes");
         minutesPerEpisode = typeMap.get("minutesPerEpisode");
-                        
         
         Elements studioElement = entryBar.getElementsByAttributeValueStarting("href", "/anime/studios/");
         if (!studioElement.isEmpty()) {
@@ -80,96 +104,188 @@ public abstract class Searchers {
             studioUrl = mainUrl + studioElement.attr("href");
         }
         
-        Element yearElement = entryBar.getElementsByClass("datePublished").first();
+        Element yearElement = entryBar.getElementsByClass("iconYear").first();
         String yearString = yearElement.text();
         Map<String, String> yearMap = Parsers.parseYear(yearString);
         beginYear = yearMap.get("beginYear");
         endYear = yearMap.get("endYear");
         
-        List<String> yearUrls = yearElement.getElementsByAttributeValueStarting("href", "/anime/years/").eachAttr("href");
-        yearUrls.replaceAll((String url) -> mainUrl + url);
+        Elements yearElements = yearElement.getElementsByAttributeValueStarting("href", "/anime/years/");
         
-        return null;
+        for (Element eachYearElement : yearElements) {
+            if (eachYearElement.text().equalsIgnoreCase(beginYear)) {
+                beginYearUrl = mainUrl + eachYearElement.attr("href");
+            } else if (eachYearElement.text().equalsIgnoreCase(endYear)) {
+                endYearUrl = mainUrl + eachYearElement.attr("href");
+            }
+        }
+        
+        Elements seasonElements = yearElement.parent().getElementsByAttributeValueStarting("href", "/anime/seasons/");
+        
+        if (!seasonElements.isEmpty()) {
+            season = seasonElements.first().text();
+            seasonUrl = mainUrl + seasonElements.first().attr("href");
+        }
+        
+        try {
+            rating = ((Double)(Double.parseDouble(entryBar.getElementsByAttributeValue("itemprop", "aggregateRating").first().getElementsByAttributeValue("itemprop", "ratingValue").attr("content"))/2D)).toString();
+            ratingCount = entryBar.getElementsByAttributeValue("itemprop", "aggregateRating").first().getElementsByAttributeValue("itemprop", "ratingCount").attr("content");
+            rank = entryBar.getElementsByAttributeValue("itemprop", "aggregateRating").first().parent().nextElementSibling().text();
+            rank = rank.substring(rank.indexOf('#') + 1);
+        } catch (Exception ex) {
+        }
+        
+        String title = mainDoc.body().getElementsByAttributeValue("itemprop", "name").first().text();
+        String altTitle = "";
+        try {
+            altTitle = mainDoc.body().getElementsByClass("aka").first().text().substring(11);
+        } catch (Exception ex) {
+        }
+        
+        Element descriptionElement = mainDoc.body().getElementsByAttributeValue("itemprop", "description").first();
+        
+        
+        String idString = descriptionElement.parent().parent().parent().getElementsByAttributeValue("data-mode", "anime").attr("data-id");
+        
+        int id;
+        try {
+            id = Integer.parseInt(idString);
+        } catch (Exception ex) {
+            id = -1;
+        }
+        
+        String url = mainDoc.head().getElementsByAttributeValue("rel", "canonical").attr("href");
+        
+        String desc = descriptionElement.text();
+        String source = "N/A";
+        try {
+            source = descriptionElement.parent().getElementsByClass("notes").first().text().substring(8);
+        } catch (Exception ex) {
+        }
+        
+        LinkedList<String> tags = new LinkedList();
+        try {
+            for (Element e : descriptionElement.parent().getElementsByClass("categories").first().getElementsByAttributeValue("itemprop", "genre")) {
+                tags.add(e.text());
+            }
+        } catch (Exception ex) {
+            tags.add("None");
+        }
+        
+        String thumbUrl = mainUrl + mainDoc.body().getElementsByAttributeValue("itemprop", "image").first().attr("src");
+        
+        int[] intUserStats = new int[6];
+        
+        
+        try {
+            Document statsDoc = Jsoup.connect("http://www.anime-planet.com/ajaxDelegator.php?mode=stats&type=anime&id=" + id + "&url=null").get();
+            Elements userStatsList = statsDoc.body().getElementsByClass("slCount");
+            int i = 0;
+            for (Element e : userStatsList) {
+                intUserStats[i] = Integer.parseInt(e.text().replaceAll(",", ""));
+                i++;
+            }
+            
+        } catch (Exception ex) {
+            System.out.println(ex);
+        }
+        
+        AnimeUserStats userStats = new AnimeUserStats(intUserStats[0], intUserStats[1], intUserStats[2], intUserStats[3], intUserStats[4], intUserStats[5]);
+        
+        
+        
+        return new AnimePage(id, url, title, altTitle, type, episodes, minutesPerEpisode, studio, studioUrl, beginYear, endYear, beginYearUrl, endYearUrl, season, seasonUrl, rating, ratingCount, rank, userStats, desc, source, tags, thumbUrl);
     }
     
     protected static List<AnimePreview> fetchAnimesFromListPage(Document mainDoc) {
-            LinkedList<AnimePreview> animePreviewList = new LinkedList();
+        LinkedList<AnimePreview> animePreviewList = new LinkedList();
 
-            //Elements elements = doc.body().getElementsByAttributeValue("data-type", "anime");
-            Elements foundList = mainDoc.body().getElementsByAttributeValue("data-type", "anime").first().getElementsByTag("li");
+        //Elements elements = doc.body().getElementsByAttributeValue("data-type", "anime");
+        Elements foundList = mainDoc.body().getElementsByAttributeValue("data-type", "anime").first().getElementsByTag("li");
 
-            for (Element animeListElement : foundList) {
-                animePreviewList.add(getAnimePreviewFromListElement(animeListElement));
-            }
-            return animePreviewList;
+        for (Element animeListElement : foundList) {
+            animePreviewList.add(getAnimePreviewFromListElement(animeListElement));
+        }
+        return animePreviewList;
     }
     
     protected static AnimePreview getAnimePreviewFromListElement(Element animeListElement) {
         
-                Document animePreviewDoc = Jsoup.parse(animeListElement.getElementsByTag("a").first().attributes().get("title"));
-                //System.out.println(animePreviewDoc);
+        String idString = animeListElement.attr("data-id");
+        
+        int id;
+        try {
+            id = Integer.parseInt(idString);
+        } catch (Exception ex) {
+            id = -1;
+        }
+        
+        String url = mainUrl + animeListElement.getElementsByAttributeValueStarting("href", "/anime/").attr("href");
+        
+        Document animePreviewDoc = Jsoup.parse(animeListElement.getElementsByTag("a").first().attributes().get("title"));
+        //System.out.println(animePreviewDoc);
 
-                String title = animePreviewDoc.body().getElementsByTag("h5").first().text();
-                String altTitle = "";
-                try {
-                    altTitle = animePreviewDoc.body().getElementsByClass("aka").first().text().substring(11);
-                } catch (Exception ex) {
+        String title = animePreviewDoc.body().getElementsByTag("h5").first().text();
+        String altTitle = "";
+        try {
+            altTitle = animePreviewDoc.body().getElementsByClass("aka").first().text().substring(11);
+        } catch (Exception ex) {
+        }
+
+        String type = "", episodes = "N/A", minutesPerEpisode = "N/A",
+               studio = "N/A",
+               beginYear = "", endYear = "",
+               rating = "N/A";
+
+        boolean foundStudio = false;
+
+        Elements entryBarElements = animePreviewDoc.body().getElementsByClass("entryBar").first().getElementsByTag("li");
+
+        for (Element headerElement : entryBarElements) {
+            if (headerElement.hasClass("type")) {
+
+                String typeString = headerElement.text();
+                Map<String, String> typeMap = Parsers.parseType(typeString);
+
+                type = typeMap.get("type");
+                episodes = typeMap.get("episodes");
+                minutesPerEpisode = typeMap.get("minutesPerEpisode");
+
+            } else if (headerElement.hasClass("iconYear")) {
+                String yearString = headerElement.text();
+
+                Map<String, String> yearMap = Parsers.parseYear(yearString);
+                beginYear = yearMap.get("beginYear");
+                endYear = yearMap.get("endYear");
+
+            } else {
+                if (headerElement.getElementsByClass("ttRating").isEmpty()) {
+                    studio = headerElement.text();
+                } else {
+                    rating = headerElement.getElementsByClass("ttRating").first().text();
                 }
+            }
 
-                String type = "", episodes = "N/A", minutesPerEpisode = "N/A",
-                       studio = "N/A",
-                       beginYear = "", endYear = "",
-                       rating = "N/A";
+        }
 
-                boolean foundStudio = false;
+        String desc = animePreviewDoc.body().getElementsByTag("p").first().text();
+        String source = "N/A";
+        try {
+            source = animePreviewDoc.body().getElementsByClass("notes").first().getAllElements().first().text().substring(8);
+        } catch (Exception ex) {
+        }
 
-                Elements entryBarElements = animePreviewDoc.body().getElementsByClass("entryBar").first().getElementsByTag("li");
-
-                for (Element headerElement : entryBarElements) {
-                    if (headerElement.hasClass("type")) {
-                        
-                        String typeString = headerElement.text();
-                        Map<String, String> typeMap = Parsers.parseType(typeString);
-                        
-                        type = typeMap.get("type");
-                        episodes = typeMap.get("episodes");
-                        minutesPerEpisode = typeMap.get("minutesPerEpisode");
-                        
-                    } else if (headerElement.hasClass("iconYear")) {
-                        String yearString = headerElement.text();
-                        
-                        Map<String, String> yearMap = Parsers.parseYear(yearString);
-                        beginYear = yearMap.get("beginYear");
-                        endYear = yearMap.get("endYear");
-                        
-                    } else {
-                        if (headerElement.getElementsByClass("ttRating").isEmpty()) {
-                            studio = headerElement.text();
-                        } else {
-                            rating = headerElement.getElementsByClass("ttRating").first().text();
-                        }
-                    }
-
-                }
-
-                String desc = animePreviewDoc.body().getElementsByTag("p").first().text();
-                String source = "N/A";
-                try {
-                    source = animePreviewDoc.body().getElementsByClass("notes").first().getAllElements().first().text().substring(8);
-                } catch (Exception ex) {
-                }
-
-                LinkedList<String> tags = new LinkedList();
-                try {
-                    for (Element e : animePreviewDoc.body().getElementsByClass("categories").first().getElementsByTag("ul").first().getElementsByTag("li")) {
-                        tags.add(e.text());
-                    }
-                } catch (Exception ex) {
-                    tags.add("None");
-                }
-
-                String url = mainUrl + animeListElement.getElementsByTag("img").first().attributes().get("src");
-                return new AnimePreview(title, altTitle, type, episodes, minutesPerEpisode, studio, beginYear, endYear, rating, desc, source, tags, url);
+        LinkedList<String> tags = new LinkedList();
+        try {
+            for (Element e : animePreviewDoc.body().getElementsByClass("categories").first().getElementsByTag("ul").first().getElementsByTag("li")) {
+                tags.add(e.text());
+            }
+        } catch (Exception ex) {
+            tags.add("None");
+        }
+        
+        String thumbUrl = mainUrl + animeListElement.getElementsByTag("img").first().attributes().get("src");
+        return new AnimePreview(id, url, title, altTitle, type, episodes, minutesPerEpisode, studio, beginYear, endYear, rating, desc, source, tags, thumbUrl);
     }
     
     

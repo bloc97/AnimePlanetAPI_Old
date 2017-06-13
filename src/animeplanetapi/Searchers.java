@@ -6,6 +6,7 @@
 package animeplanetapi;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,7 @@ public abstract class Searchers {
         
         try {
             
-            Document mainDoc = Jsoup.connect("http://www.anime-planet.com/anime/all?name=" + name).get();
+            Document mainDoc = Jsoup.connect("http://www.anime-planet.com/anime/all?name=" + name + "&sort=status_1&order=desc").get();
             
             
             if (isDocumentFullAnimePage(mainDoc)) {
@@ -41,7 +42,7 @@ public abstract class Searchers {
                 animePreviewList = fetchAnimesFromListPage(mainDoc);
             }
             
-        } catch (IOException ex) {
+        } catch (Exception ex) {
         }
         return animePreviewList;
     }
@@ -51,7 +52,7 @@ public abstract class Searchers {
         
         try {
             
-            Document mainDoc = Jsoup.connect("http://www.anime-planet.com/anime/all?name=" + name).get();
+            Document mainDoc = Jsoup.connect("http://www.anime-planet.com/anime/all?name=" + name + "&sort=status_1&order=desc").get();
             
             
             if (isDocumentFullAnimePage(mainDoc)) {
@@ -65,9 +66,9 @@ public abstract class Searchers {
                 }
             }
             
-        } catch (IOException ex) {
+        } catch (Exception ex) {
         }
-        return new AnimePage(-1, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", new AnimeUserStats(0, 0, 0, 0, 0, 0), "", "", new LinkedList(), "");
+        return new AnimePage(-1, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", new AnimeUserStats(0, 0, 0, 0, 0, 0), "", "", Arrays.asList(new String[] {"None"}), "");
     }
     
     public static boolean isDocumentFullAnimePage(Document mainDoc) {
@@ -104,28 +105,34 @@ public abstract class Searchers {
             studioUrl = mainUrl + studioElement.attr("href");
         }
         
-        Element yearElement = entryBar.getElementsByClass("iconYear").first();
-        String yearString = yearElement.text();
+        
+        String yearString = "TBA";
+        try {
+            Element yearElement = entryBar.getElementsByClass("iconYear").first();
+            yearString = yearElement.text();
+            
+            Elements yearElements = yearElement.getElementsByAttributeValueStarting("href", "/anime/years/");
+
+            for (Element eachYearElement : yearElements) {
+                if (eachYearElement.text().equalsIgnoreCase(beginYear)) {
+                    beginYearUrl = mainUrl + eachYearElement.attr("href");
+                } else if (eachYearElement.text().equalsIgnoreCase(endYear)) {
+                    endYearUrl = mainUrl + eachYearElement.attr("href");
+                }
+            }
+
+            Elements seasonElements = yearElement.parent().getElementsByAttributeValueStarting("href", "/anime/seasons/");
+
+            if (!seasonElements.isEmpty()) {
+                season = seasonElements.first().text();
+                seasonUrl = mainUrl + seasonElements.first().attr("href");
+            }
+        } catch (Exception ex) {
+        }
         Map<String, String> yearMap = Parsers.parseYear(yearString);
         beginYear = yearMap.get("beginYear");
         endYear = yearMap.get("endYear");
         
-        Elements yearElements = yearElement.getElementsByAttributeValueStarting("href", "/anime/years/");
-        
-        for (Element eachYearElement : yearElements) {
-            if (eachYearElement.text().equalsIgnoreCase(beginYear)) {
-                beginYearUrl = mainUrl + eachYearElement.attr("href");
-            } else if (eachYearElement.text().equalsIgnoreCase(endYear)) {
-                endYearUrl = mainUrl + eachYearElement.attr("href");
-            }
-        }
-        
-        Elements seasonElements = yearElement.parent().getElementsByAttributeValueStarting("href", "/anime/seasons/");
-        
-        if (!seasonElements.isEmpty()) {
-            season = seasonElements.first().text();
-            seasonUrl = mainUrl + seasonElements.first().attr("href");
-        }
         
         try {
             rating = ((Double)(Double.parseDouble(entryBar.getElementsByAttributeValue("itemprop", "aggregateRating").first().getElementsByAttributeValue("itemprop", "ratingValue").attr("content"))/2D)).toString();
@@ -138,7 +145,8 @@ public abstract class Searchers {
         String title = mainDoc.body().getElementsByAttributeValue("itemprop", "name").first().text();
         String altTitle = "";
         try {
-            altTitle = mainDoc.body().getElementsByClass("aka").first().text().substring(11);
+            altTitle = mainDoc.body().getElementsByClass("aka").first().text();
+            altTitle = altTitle.substring(altTitle.indexOf(':') + 1).trim();
         } catch (Exception ex) {
         }
         
@@ -162,7 +170,6 @@ public abstract class Searchers {
             source = descriptionElement.parent().getElementsByClass("notes").first().text().substring(8);
         } catch (Exception ex) {
         }
-        
         LinkedList<String> tags = new LinkedList();
         try {
             for (Element e : descriptionElement.parent().getElementsByClass("categories").first().getElementsByAttributeValue("itemprop", "genre")) {
@@ -187,7 +194,6 @@ public abstract class Searchers {
             }
             
         } catch (Exception ex) {
-            System.out.println(ex);
         }
         
         AnimeUserStats userStats = new AnimeUserStats(intUserStats[0], intUserStats[1], intUserStats[2], intUserStats[3], intUserStats[4], intUserStats[5]);

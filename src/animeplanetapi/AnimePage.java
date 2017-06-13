@@ -12,8 +12,8 @@ import java.util.List;
  * @author bowen
  */
 public class AnimePage extends AnimePreview {
-    public final String studioUrl, beginYearUrl, endYearUrl, season, seasonUrl, ratingCount, rank;
-    public final AnimeUserStats userStats;
+    private final String studioUrl, beginYearUrl, endYearUrl, season, seasonUrl, ratingCount, rank;
+    private final AnimeUserStats userStats;
     public AnimePage(int id, String url, String title, String altTitle, String type, String episodes, String minutesPerEpisode, String studio, String studioUrl,
             String beginYear, String endYear, String beginYearUrl, String endYearUrl, String season, String seasonUrl, 
             String rating, String ratingCount, String rank, AnimeUserStats userStats, String description, String source, List<String> tags, String thumbnailUrl) {

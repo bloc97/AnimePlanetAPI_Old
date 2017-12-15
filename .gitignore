@@ -45,3 +45,7 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+*.jar
+*.xml
+*.class
+src/animeplanetapi/Main.java

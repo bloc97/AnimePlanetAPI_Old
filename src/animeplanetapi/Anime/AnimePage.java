@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package animeplanetapi;
+package animeplanetapi.Anime;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -12,13 +13,19 @@ import java.util.List;
  * @author bowen
  */
 public class AnimePage extends AnimePreview {
-    private final String studioUrl, beginYearUrl, endYearUrl, season, seasonUrl, ratingCount, rank;
+    private final String minutesPerEpisode, studioUrl, beginYearUrl, endYearUrl, season, seasonUrl, ratingCount, rank;
     private final AnimeUserStats userStats;
+    
+    public AnimePage() {
+        this(-1, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", new AnimeUserStats(0, 0, 0, 0, 0, 0), "", "", Arrays.asList(new String[] {"None"}), "");
+    }
+    
     public AnimePage(int id, String url, String title, String altTitle, String type, String episodes, String minutesPerEpisode, String studio, String studioUrl,
             String beginYear, String endYear, String beginYearUrl, String endYearUrl, String season, String seasonUrl, 
             String rating, String ratingCount, String rank, AnimeUserStats userStats, String description, String source, List<String> tags, String thumbnailUrl) {
-        super(id, url, title, altTitle, type, episodes, minutesPerEpisode, studio, beginYear, endYear, rating, description, source, tags, thumbnailUrl);
+        super(id, url, title, altTitle, type, episodes, studio, beginYear, endYear, rating, description, source, tags, thumbnailUrl);
         
+        this.minutesPerEpisode = minutesPerEpisode;
         this.studioUrl = studioUrl;
         this.beginYearUrl = beginYearUrl;
         this.endYearUrl = endYearUrl;
@@ -29,6 +36,12 @@ public class AnimePage extends AnimePreview {
         this.userStats = userStats;
     }
     
+    public boolean hasMinutesPerEpisode() {
+        return !getMinutesPerEpisode().equals("N/A");
+    }
+    public String getMinutesPerEpisode() {
+        return minutesPerEpisode;
+    }
     public boolean hasStudioUrl() {
         return !getStudioUrl().equals("N/A");
     }

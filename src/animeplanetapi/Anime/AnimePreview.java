@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package animeplanetapi;
+package animeplanetapi.Anime;
 
 import java.util.List;
 
@@ -13,16 +13,15 @@ import java.util.List;
  */
 public class AnimePreview {
     private final int id;
-    private final String url, title, altTitle, type, episodes, minutesPerEpisode, studio, beginYear, endYear, rating, description, source, thumb;
+    private final String url, title, altTitle, type, episodes, studio, beginYear, endYear, rating, description, source, thumb;
     private final List<String> tags;
-    public AnimePreview(int id, String url, String title, String altTitle, String type, String episodes, String minutesPerEpisode, String studio, String beginYear, String endYear, String rating, String description, String source, List<String> tags, String thumbnailUrl) {
+    public AnimePreview(int id, String url, String title, String altTitle, String type, String episodes, String studio, String beginYear, String endYear, String rating, String description, String source, List<String> tags, String thumbnailUrl) {
         this.id = id;
         this.url = url;
         this.title = title;
         this.altTitle = altTitle;
         this.type = type;
         this.episodes = episodes;
-        this.minutesPerEpisode = minutesPerEpisode;
         this.studio = studio;
         this.beginYear = beginYear;
         this.endYear = endYear;
@@ -62,12 +61,6 @@ public class AnimePreview {
     }
     public String getEpisodes() {
         return episodes;
-    }
-    public boolean hasMinutesPerEpisode() {
-        return !getMinutesPerEpisode().equals("N/A");
-    }
-    public String getMinutesPerEpisode() {
-        return minutesPerEpisode;
     }
     
     public boolean hasStudio() {
@@ -122,17 +115,28 @@ public class AnimePreview {
     }
     
     public boolean hasThumbnail() {
-        return !(getThumbnailUrl().contains("blank_main.jpg"));
+        return !(getThumbnailUrl().contains("blank_main.jpg") || getThumbnailUrl().contains("card-load.gif"));
     }
     public String getThumbnailUrl() {
         return thumb;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof AnimePreview) {
+            AnimePreview preview = (AnimePreview) obj;
+            if (getId() == preview.getId()) {
+                return true;
+            }
+        }
+        return false;
     }
     
     @Override
     public String toString() {
         return getId() + " " + getTitle() + " (" + getAltTitle() + ")\n" +
                getUrl() + "\n" +
-               getType() + ", " + getEpisodes() + " e" + ", " + getMinutesPerEpisode() + " min/e" + ", " + getStudio() + ", " + (hasMultipleYears() ? getBeginYear() + " - " + getEndYear() : getBeginYear()) + ", " + getRating() + "/5" + "\n" +
+               getType() + ", " + getEpisodes() + " ep" + ", " + getStudio() + ", " + (hasMultipleYears() ? getBeginYear() + " - " + getEndYear() : getBeginYear()) + ", " + getRating() + "/5" + "\n" +
                getDescription() + " (" + getDescriptionSource() + ")\n" +
                getTags() + "\n" +
                getThumbnailUrl();
